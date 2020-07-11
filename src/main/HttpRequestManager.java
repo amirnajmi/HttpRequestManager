@@ -8,44 +8,54 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class HttpRequestManager {
 
     private static final String REQUEST_DELIMITER = "------------------------------------------------------------------";
+    private String jSessionID;
 
     public static void main(String[] args) {
-        new HttpRequestManager().executeCommand();
+        String result = new HttpRequestManager().executeCommand();
+        System.out.println(result);
     }
 
     public String executeCommand() {
+        List<String> requestContents = parseRequestFile();
         StringBuilder responseBody = new StringBuilder();
-        HttpClient httpClient = HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).build();
-        List<HttpRequest> httpRequests = generateRequests();
-        httpRequests.stream().forEach(req -> {
-            try {
-                HttpResponse<String> res = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
-                responseBody.append(res.body()).append(REQUEST_DELIMITER);
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        });
+        List<String> responses = requestContents.stream().map(this::sendRequest).collect(Collectors.toList());
+        System.out.println(responses);
         return responseBody.toString();
     }
 
-
-    private List<HttpRequest> generateRequests() {
-        List<String> requestContents = parseRequestFile();
-        return requestContents.stream().map(this::extractHeadersAndParameters).collect(Collectors.toList());
+    private String sendRequest(String requestContent){
+        HttpRequest req = generateRequest(requestContent);
+        try {
+            HttpClient httpClient = HttpClient.newBuilder()
+                    .version(HttpClient.Version.HTTP_1_1)
+                    .connectTimeout(Duration.ofSeconds(40)).build();
+            HttpResponse<String> res = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
+            Map<String, List<String>> headerMap = res.headers().map();
+            if (headerMap.containsKey("set-cookie")) {
+                String cookie = headerMap.get("set-cookie").get(0);
+                String[] split = cookie.split(";");
+                jSessionID = cookie;
+            }
+            return res.body();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        return "";
     }
 
-    private HttpRequest extractHeadersAndParameters(String s) {
+    private HttpRequest generateRequest(String requestContent) {
         HttpRequest httpRequest = null;
-        List<String> lines = s.lines().filter(line -> !line.isEmpty() && !line.isBlank()).collect(Collectors.toList());
+        List<String> lines = requestContent.lines()
+                .filter(line -> !line.isEmpty() && !line.isBlank()).collect(Collectors.toList());
         String firstLine = lines.get(0);
         lines.remove(firstLine);
         String[] requestCommand = firstLine.split(" ");
@@ -65,6 +75,7 @@ public class HttpRequestManager {
         return httpRequest;
     }
 
+
     private HttpRequest buildHttpRequest(String httpRequest, String uri, Map<String, String> headers, String body) {
         HttpRequest.Builder requestBuilder = HttpRequest.newBuilder();
         switch (httpRequest) {
@@ -72,10 +83,15 @@ public class HttpRequestManager {
                 requestBuilder.GET().uri(URI.create(uri));
                 break;
             case "POST":
-                requestBuilder.POST(HttpRequest.BodyPublishers.ofString(body)).uri(URI.create(uri)).build();
+                requestBuilder.POST(HttpRequest.BodyPublishers.ofString(body))
+                        .uri(URI.create(uri)).build();
                 break;
         }
         headers.forEach(requestBuilder::header);
+        if (jSessionID != null) {
+            String[] split = jSessionID.split("=");
+            requestBuilder.header("Cookie", jSessionID);
+        }
         return requestBuilder.build();
     }
 
