@@ -1,7 +1,4 @@
 POST https://zonecours2.hec.ca/portal/xlogin HTTP/1.1
-Host: zonecours2.hec.ca
-Connection: keep-alive
-Content-Length: 32
 Cache-Control: max-age=0
 Origin: https://zonecours2.hec.ca
 Upgrade-Insecure-Requests: 1
@@ -20,8 +17,6 @@ Accept-Language: en-US,en;q=0.9,ru-RU;q=0.8,ru;q=0.7,fr;q=0.6
 eid=testcharge51&pw=TestCharge51
 ------------------------------------------------------------------
 GET https://zonecours2.hec.ca/portal HTTP/1.1
-Host: zonecours2.hec.ca
-Connection: keep-alive
 Cache-Control: max-age=0
 Upgrade-Insecure-Requests: 1
 DNT: 1
@@ -37,9 +32,6 @@ Accept-Language: en-US,en;q=0.9,ru-RU;q=0.8,ru;q=0.7,fr;q=0.6
 
 ------------------------------------------------------------------
 POST https://zonecours2.hec.ca/direct/code_of_conduct/new.json HTTP/1.1
-Host: zonecours2.hec.ca
-Connection: keep-alive
-Content-Length: 5
 Accept: application/json, text/javascript, */*; q=0.01
 DNT: 1
 X-Requested-With: XMLHttpRequest
@@ -56,8 +48,6 @@ Accept-Language: en-US,en;q=0.9,ru-RU;q=0.8,ru;q=0.7,fr;q=0.6
 saved
 ------------------------------------------------------------------
 GET https://zonecours2.hec.ca/portal/site/TestdeChargeSections/tool/64df0c59-db17-4951-a242-4f682c559fa0/jsf/index/mainIndex HTTP/1.1
-Host: zonecours2.hec.ca
-Connection: keep-alive
 Upgrade-Insecure-Requests: 1
 DNT: 1
 User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36
@@ -72,9 +62,6 @@ Accept-Language: en-US,en;q=0.9,ru-RU;q=0.8,ru;q=0.7,fr;q=0.6
 
 ------------------------------------------------------------------
 POST https://zonecours2.hec.ca/portal/site/TestdeChargeSections/tool/64df0c59-db17-4951-a242-4f682c559fa0/jsf/index/mainIndex HTTP/1.1
-Host: zonecours2.hec.ca
-Connection: keep-alive
-Content-Length: 25131
 Cache-Control: max-age=0
 Origin: https://zonecours2.hec.ca
 Upgrade-Insecure-Requests: 1

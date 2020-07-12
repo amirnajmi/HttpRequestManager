@@ -30,7 +30,7 @@ public class HttpRequestManager {
         return responseBody.toString();
     }
 
-    private String sendRequest(String requestContent){
+    private String sendRequest(String requestContent) {
         HttpRequest req = generateRequest(requestContent);
         try {
             HttpClient httpClient = HttpClient.newBuilder()
@@ -38,7 +38,7 @@ public class HttpRequestManager {
                     .connectTimeout(Duration.ofSeconds(40)).build();
             HttpResponse<String> res = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
             Map<String, List<String>> headerMap = res.headers().map();
-            if (headerMap.containsKey("set-cookie")) {
+            if (headerMap.containsKey("set-cookie")&& jSessionID==null) {
                 String cookie = headerMap.get("set-cookie").get(0);
                 String[] split = cookie.split(";");
                 jSessionID = cookie;
@@ -86,6 +86,9 @@ public class HttpRequestManager {
                 requestBuilder.POST(HttpRequest.BodyPublishers.ofString(body))
                         .uri(URI.create(uri)).build();
                 break;
+        }
+        if (headers.containsKey("Cookie")) {
+            headers.remove("Cookie");
         }
         headers.forEach(requestBuilder::header);
         if (jSessionID != null) {
