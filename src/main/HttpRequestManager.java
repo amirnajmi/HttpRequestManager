@@ -12,6 +12,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 public class HttpRequestManager {
@@ -20,30 +21,41 @@ public class HttpRequestManager {
     private HttpClient httpClient;
 
     public static void main(String[] args) {
-        List<String> strings = new HttpRequestManager().parseRequestFile();
-        String firstReq = strings.get(0);
-        List<String> collect = firstReq.lines().collect(Collectors.toList());
-        String body = collect.get(collect.size() - 1);
-        collect.remove(body);
-        StringBuilder stringBuilder = new StringBuilder();
-        collect.forEach(s -> {
-            stringBuilder.append(s).append(System.lineSeparator());
-        });
-        String result = null;
-        try {
-            result = new HttpRequestManager().executeCommand(stringBuilder.toString(), body);
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
-        }
-        System.out.println(result);
+        HttpRequestManager httpRequestManager = new HttpRequestManager();
+        List<String> strings = httpRequestManager.parseRequestFile();
+        List<String> responses = strings.stream()
+                .map(s -> {
+                    List<String> collect = s.lines().filter(line -> !line.isEmpty() && !line.isBlank())
+                            .collect(Collectors.toList());
+                    String body = null;
+                    if (collect.stream().findFirst().get().contains("POST")) {
+                        body = collect.get(collect.size() - 1);
+                        collect.remove(collect.get(collect.size() - 1));
+                    }
+                    StringBuilder headerContent = new StringBuilder();
+                    String result = null;
+
+                    collect.forEach(header -> {
+                        headerContent.append(header).append(System.lineSeparator());
+                    });
+                    try {
+                        result = httpRequestManager.executeCommand(headerContent.toString(), body);
+                    } catch (IOException | InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    return result;
+                }).collect(Collectors.toList());
+        System.out.println(responses);
     }
 
     public String executeCommand(String headerContent, String body) throws IOException, InterruptedException {
-        CookieHandler.setDefault(new CookieManager());
-        this.httpClient = HttpClient.newBuilder()
-                .version(HttpClient.Version.HTTP_1_1)
-                .connectTimeout(Duration.ofSeconds(40))
-                .cookieHandler(CookieHandler.getDefault()).build();
+        if (this.httpClient == null) {
+            CookieHandler.setDefault(new CookieManager());
+            this.httpClient = HttpClient.newBuilder()
+                    .version(HttpClient.Version.HTTP_1_1)
+                    .connectTimeout(Duration.ofSeconds(40))
+                    .cookieHandler(CookieHandler.getDefault()).build();
+        }
         return sendRequest(headerContent, body);
 
     }
@@ -66,7 +78,7 @@ public class HttpRequestManager {
         String uri = requestCommand[1];
         Map<String, String> headers = new HashMap<>();
         lines.forEach(string -> string.lines().forEach(line -> {
-            String[] header = line.split(":");
+            String[] header = line.split(":", 2);
             headers.put(header[0], header[1]);
         }));
         httpRequest = buildHttpRequest(httpMethod, uri, headers, body);
